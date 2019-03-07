@@ -27,13 +27,15 @@ void seed_prng() {
 }
 
 void get64rnd(unsigned char* buf) {
+    // 16 * 4 == 64
+    int cursor = 0;
     for(int i = 0; i < 16; i++) {
         ub4 tmp = rand(&ctx);
 
-        buf[i++] = (unsigned char)(tmp & 0xFF);
-        buf[i++] = (unsigned char)((tmp >> 8) & 0xFF);
-        buf[i++] = (unsigned char)((tmp >> 16) & 0xFF);
-        buf[i++] = (unsigned char)((tmp >> 24) & 0xFF);
+        buf[cursor++] = (unsigned char)(tmp & 0xFF);
+        buf[cursor++] = (unsigned char)((tmp >> 8) & 0xFF);
+        buf[cursor++] = (unsigned char)((tmp >> 16) & 0xFF);
+        buf[cursor++] = (unsigned char)((tmp >> 24) & 0xFF);
     }
 }
 
