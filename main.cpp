@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstring>
 #include <time.h>
+#include <aws/lambda-runtime/runtime.h>
 
 #include "ow-crypt.h"
 #include "rand.hpp"
@@ -64,11 +65,18 @@ bool compare(const char* raw, char* salted_hash) {
     return strcmp(newhash, salted_hash) == 0;
 }
 
+static aws::lambda_runtime::invocation_response
+    aws_handler(aws::lambda_runtime::invocation_request const& request) {
+
+    return aws::lambda_runtime::invocation_response::success("{\"Status\": Works}", "application/json");
+}
+
 int main() {
     seed_prng();
-
-    char* h = hash("hash me fam", 12);
-    std::cout << "Hash: " << h << std::endl;
-    std::cout << "Are Same: " << compare("hash me fam", h) << std::endl;
+    run_handler(&aws_handler);
+    
+//    char* h = hash("hash me fam", 12);
+//    std::cout << "Hash: " << h << std::endl;
+//    std::cout << "Are Same: " << compare("hash me fam", h) << std::endl;
     return 0;
 }

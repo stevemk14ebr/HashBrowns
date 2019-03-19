@@ -33,3 +33,5 @@
 
 .idea/
 cmake-build-*/
+aws-lambda*/
+build/
