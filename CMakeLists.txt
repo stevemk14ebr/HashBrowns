@@ -7,7 +7,7 @@ find_package(aws-lambda-runtime CONFIG REQUIRED
 
 set(CMAKE_CXX_STANDARD 17)
 set_property(SOURCE x86.S PROPERTY LANGUAGE C)
-add_executable(HashBrowns crypt.h crypt_blowfish.h crypt_blowfish.cpp crypt_gensalt.h crypt_gensalt.cpp wrapper.cpp main.cpp standard.hpp rand.hpp rand.cpp)
+add_executable(HashBrowns crypt.h crypt_blowfish.h crypt_blowfish.cpp crypt_gensalt.h crypt_gensalt.cpp wrapper.cpp main.cpp standard.hpp rand.hpp rand.cpp json.hpp)
 
 target_link_libraries(HashBrowns PRIVATE AWS::aws-lambda-runtime)
 aws_lambda_package_target(HashBrowns)

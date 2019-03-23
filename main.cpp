@@ -1,11 +1,14 @@
 #include <iostream>
 #include <cstring>
 #include <time.h>
+#include "json.hpp"
 #include <aws/lambda-runtime/runtime.h>
 
 #include "ow-crypt.h"
 #include "rand.hpp"
 
+using json = nlohmann::json;
+using aws_response = aws::lambda_runtime::invocation_response;
 #define CRYPT_OUTPUT_SIZE		(7 + 22 + 31 + 1)
 #define CRYPT_GENSALT_OUTPUT_SIZE	(7 + 22 + 1)
 randctx ctx;
@@ -54,7 +57,7 @@ char* hash(const char* str, unsigned long cpu_cost) {
     return hash;
 }
 
-bool compare(const char* raw, char* salted_hash) {
+bool compare(const char* raw, const char* salted_hash) {
     // hash is always 28 characters long
     char salt[61] = {0};
     strcpy(salt, salted_hash);
@@ -67,14 +70,53 @@ bool compare(const char* raw, char* salted_hash) {
 
 static aws::lambda_runtime::invocation_response
     aws_handler(aws::lambda_runtime::invocation_request const& request) {
+    if(request.payload.length() > 200) {
+        return aws_response::failure("{\"Error\": Too long}", "application/json");
+    }
 
-    return aws::lambda_runtime::invocation_response::success("{\"Status\": Works}", "application/json");
+    // Verify action exists
+    auto jsonData = json::parse(request.payload);
+    if(jsonData.count("action") != 1) {
+        return aws_response::failure("{\"Error\": Invalid request}", "application/json");
+    }
+
+    // Switch on action
+    std::string action = jsonData.at("action");
+    if(action == "hash") {
+        // Verify text input exists
+        if(jsonData.count("text") != 1) {
+            return aws_response::failure("{\"Error\": Invalid request}", "application/json");
+        }
+        std::string rawText = jsonData.at("text");
+        char* newHash = hash(rawText.c_str(), 12);
+
+        json response = {
+                {"hash", newHash}
+        };
+        return aws_response::success(response.dump(),  "application/json");
+    } else if (action == "compare") {
+        // Verify text and hash exists
+        if(jsonData.count("text") != 1 || jsonData.count("hash") != 1) {
+            return aws_response::failure("{\"Error\": Invalid request}", "application/json");
+        }
+
+        std::string rawText = jsonData.at("text");
+        std::string cmpHash = jsonData.at("hash");
+        bool same = compare(rawText.c_str(), cmpHash.c_str());
+
+        json response = {
+                {"match", same}
+        };
+        return aws_response::success(response.dump(), "application/json");
+    }
+
+    return aws_response::failure("{\"Error\": Invalid request}", "application/json");
 }
 
 int main() {
     seed_prng();
     run_handler(&aws_handler);
-    
+
 //    char* h = hash("hash me fam", 12);
 //    std::cout << "Hash: " << h << std::endl;
 //    std::cout << "Are Same: " << compare("hash me fam", h) << std::endl;
